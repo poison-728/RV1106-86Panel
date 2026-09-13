@@ -1,0 +1,22 @@
+#!/bin/sh
+# 开机自启动 /userdata/demo_board
+
+case "$1" in
+  start)
+    # fbdev 直写的应用无法阻止内核控制台超时黑屏, 必须显式关掉
+    echo 0 > /sys/module/kernel/parameters/consoleblank 2>/dev/null
+
+    cd /userdata || exit 1
+    ./demo_board > /userdata/demo.log 2>&1 &
+    ;;
+  stop)
+    killall demo_board 2>/dev/null
+    ;;
+  restart)
+    "$0" stop
+    sleep 1
+    "$0" start
+    ;;
+esac
+
+exit 0

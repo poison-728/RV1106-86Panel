@@ -1,0 +1,48 @@
+# RV1106-86Panel — 板端编译 (Luckfox Pico Ultra / RV1106, ARM uClibc, fbdev + evdev)
+#
+# 用法:
+#   make -f Makefile.board TOOLCHAIN=/path/to/arm-rockchip830-linux-uclibcgnueabihf-gcc
+#   make -f Makefile.board clean
+#
+# 产物: ./demo_board (静态链接, 推送到板子 /userdata/ 即可运行)
+
+TOOLCHAIN ?= $(shell find /home -name 'arm-rockchip830-linux-uclibcgnueabihf-gcc' 2>/dev/null | head -1)
+ifeq ($(strip $(TOOLCHAIN)),)
+$(error "未找到 ARM 编译器，请设 TOOLCHAIN=<完整路径>")
+endif
+
+CC      = $(TOOLCHAIN)
+OUT     = demo_board
+BUILD   = build_board
+OBJDIR  = $(BUILD)/obj
+
+CFLAGS ?= -O2 -g0
+CFLAGS += -I. -I./lvgl -I./lv_drivers \
+          -I./application -I./application/screens -I./application/fonts \
+          -I./driver -I./modbus -I./mqtt \
+          -Wall
+LDFLAGS += -static -lm -lpthread
+
+# 源码收集: LVGL 本体 + 驱动库 + 四个业务目录
+# 注意: mqtt/lessons/ 是 Socket/MQTT 教学练习(带独立 main)，不参与主程序编译
+#       modbus/stm32_slave/ 是 STM32 从机工程(Keil/Cube)，与 Linux 主程序无关
+CSRCS := $(shell find ./lvgl/src ./lv_drivers ./application ./driver -name '*.c' 2>/dev/null)
+CSRCS += $(shell find ./modbus ./mqtt -maxdepth 1 -name '*.c' 2>/dev/null)
+MAINSRC = main.c
+
+OBJS    = $(addprefix $(OBJDIR)/,$(CSRCS:.c=.o))
+MAINOBJ = $(OBJDIR)/$(MAINSRC:.c=.o)
+
+$(OBJDIR)/%.o: %.c
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+all: $(OUT)
+
+$(OUT): $(MAINOBJ) $(OBJS)
+	$(CC) -o $@ $^ $(LDFLAGS)
+
+clean:
+	rm -rf $(BUILD) $(OUT)
+
+.PHONY: all clean

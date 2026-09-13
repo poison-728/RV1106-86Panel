@@ -1,0 +1,24 @@
+# ==== 编译产物 ====
+build/
+build_board/
+*.o
+*.d
+demo
+demo_board
+
+# ==== SDK 大体积产物 ====
+output/
+*.img
+*.img.*
+
+# ==== 本地运行配置（含敏感信息，示例见 docs） ====
+wpa_supplicant.conf
+smarthome.cfg
+*.tar.gz
+
+# ==== 编辑器 / 操作系统 ====
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db

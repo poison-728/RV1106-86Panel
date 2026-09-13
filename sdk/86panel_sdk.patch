@@ -1,0 +1,119 @@
+diff --git a/project/app/wifi_app/hostapd-2.6/hostapd/hostapd b/project/app/wifi_app/hostapd-2.6/hostapd/hostapd
+index 807857ca0..0fecdbb93 100755
+Binary files a/project/app/wifi_app/hostapd-2.6/hostapd/hostapd and b/project/app/wifi_app/hostapd-2.6/hostapd/hostapd differ
+diff --git a/project/app/wifi_app/hostapd-2.6/hostapd/hostapd_cli b/project/app/wifi_app/hostapd-2.6/hostapd/hostapd_cli
+index 5720a9055..3c8244c49 100755
+Binary files a/project/app/wifi_app/hostapd-2.6/hostapd/hostapd_cli and b/project/app/wifi_app/hostapd-2.6/hostapd/hostapd_cli differ
+diff --git a/project/app/wifi_app/wifi/librkwifibt.so b/project/app/wifi_app/wifi/librkwifibt.so
+index 49cb4051c..65c1bb8e7 100755
+Binary files a/project/app/wifi_app/wifi/librkwifibt.so and b/project/app/wifi_app/wifi/librkwifibt.so differ
+diff --git a/sysdrv/source/kernel/arch/arm/boot/dts/rv1106-luckfox-pico-ultra-ipc.dtsi b/sysdrv/source/kernel/arch/arm/boot/dts/rv1106-luckfox-pico-ultra-ipc.dtsi
+index 505e53a83..13f70034e 100755
+--- a/sysdrv/source/kernel/arch/arm/boot/dts/rv1106-luckfox-pico-ultra-ipc.dtsi
++++ b/sysdrv/source/kernel/arch/arm/boot/dts/rv1106-luckfox-pico-ultra-ipc.dtsi
+@@ -55,6 +55,10 @@ backlight: backlight {
+ 
+ 	panel: panel {
+ 		compatible = "simple-panel";
++		backlight = <&backlight>;
++
++		reset-gpios = <&gpio0 RK_PA1 GPIO_ACTIVE_LOW>;
++		reset-delay-ms = <200>;
+ 		status = "okay";
+ 
+ 		bus-format = <MEDIA_BUS_FMT_RGB666_1X18>;
+@@ -77,7 +81,7 @@ timing0: timing0 {
+ 				hsync-active = <0>;
+ 				vsync-active = <0>;
+ 				de-active = <0>;
+-				pixelclk-active = <0>;
++				pixelclk-active = <1>;
+ 			};
+ 		};
+ 
+@@ -443,15 +447,19 @@ &vop {
+ &i2c3 {
+ 	status = "okay";
+ 	clock-frequency = <100000>;
+-	GT911:touchscreen {
+-		compatible = "goodix,gt911";
+-		reg = <0x14>;
++	ft663u:touchscreen@48 {
++		compatible = "focaltech,fts"; 
++		reg = <0x48>;
+ 
+ 		interrupt-parent = <&gpio0>;
+-		interrupts = <RK_PA3 IRQ_TYPE_EDGE_FALLING>;
++        interrupts = <RK_PA3 IRQ_TYPE_LEVEL_LOW>;
+ 
+-		reset-gpios = <&gpio0 RK_PA4 GPIO_ACTIVE_LOW>;
+-		pinctrl-names = "default";
++		focaltech,irq-gpio = <&gpio0 RK_PA3 GPIO_ACTIVE_HIGH>;
++        focaltech,reset-gpio = <&gpio0 RK_PA4 GPIO_ACTIVE_LOW>;
++		focaltech,max-touch-number = <1>; 
++		focaltech,display-coords = <0 0 720 720>;
++		status = "okay";
++		
+ 	};
+ };
+ 
+@@ -473,6 +481,8 @@ &i2c1 {
+ 	pinctrl-0 = <&i2c1m1_xfer>;
+ };
+ &i2c2 {
++	status = "okay";
++	clock-frequency = <100000>;
+ 	pinctrl-0 = <&i2c2m0_xfer>;
+ };
+ &i2c3 {
+diff --git a/sysdrv/source/kernel/arch/arm/boot/dts/rv1106g-luckfox-pico-ultra.dts b/sysdrv/source/kernel/arch/arm/boot/dts/rv1106g-luckfox-pico-ultra.dts
+index b9d243e68..034532bd9 100755
+--- a/sysdrv/source/kernel/arch/arm/boot/dts/rv1106g-luckfox-pico-ultra.dts
++++ b/sysdrv/source/kernel/arch/arm/boot/dts/rv1106g-luckfox-pico-ultra.dts
+@@ -129,6 +129,13 @@ &uart1 {
+ 	pinctrl-0 = <&uart1m0_xfer &uart1m0_ctsn>;
+ };
+ 
++/**********RS485**********/
++&uart2 {
++    status = "okay";
++    pinctrl-names = "default";
++    pinctrl-0 = <&uart2m1_xfer>;
++};
++
+ &pinctrl {
+ 	wireless-bluetooth {
+ 		uart1_gpios: uart1-gpios {
+diff --git a/sysdrv/source/kernel/arch/arm/configs/luckfox_rv1106_linux_defconfig b/sysdrv/source/kernel/arch/arm/configs/luckfox_rv1106_linux_defconfig
+index 203ce2997..0c16b3e6e 100755
+--- a/sysdrv/source/kernel/arch/arm/configs/luckfox_rv1106_linux_defconfig
++++ b/sysdrv/source/kernel/arch/arm/configs/luckfox_rv1106_linux_defconfig
+@@ -280,7 +280,7 @@ CONFIG_KEYBOARD_GPIO=y
+ CONFIG_KEYBOARD_GPIO_POLLED=y
+ # CONFIG_INPUT_MOUSE is not set
+ CONFIG_INPUT_TOUCHSCREEN=y
+-CONFIG_TOUCHSCREEN_GOODIX=y
++CONFIG_TOUCHSCREEN_FTS=y
+ CONFIG_TOUCHSCREEN_EDT_FT5X06=y
+ # CONFIG_SERIO is not set
+ # CONFIG_LEGACY_PTYS is not set
+@@ -343,7 +343,7 @@ CONFIG_ROCKCHIP_VOP=y
+ CONFIG_ROCKCHIP_RGB=y
+ CONFIG_DRM_PANEL_SIMPLE=y
+ CONFIG_DRM_SII902X=y
+-CONFIG_BACKLIGHT_PWM=m
++CONFIG_BACKLIGHT_PWM=y
+ CONFIG_ROCKCHIP_MULTI_RGA=m
+ CONFIG_ROCKCHIP_RGA_PROC_FS=y
+ # CONFIG_ROCKCHIP_RGA_DEBUG_FS is not set
+diff --git a/sysdrv/source/kernel/drivers/input/touchscreen/focaltech_touch/Makefile b/sysdrv/source/kernel/drivers/input/touchscreen/focaltech_touch/Makefile
+index fbf30651f..a94dee50f 100644
+--- a/sysdrv/source/kernel/drivers/input/touchscreen/focaltech_touch/Makefile
++++ b/sysdrv/source/kernel/drivers/input/touchscreen/focaltech_touch/Makefile
+@@ -15,5 +15,5 @@ focaltech-ts-y += focaltech_esdcheck.o
+ focaltech-ts-y += focaltech_i2c.o
+ focaltech-ts-y += focaltech_point_report_check.o
+ focaltech-ts-y += focaltech_upgrade_ft8201.o
+-focaltech-ts-y += focaltech_test/
++# focaltech-ts-y += focaltech_test/
+ 
