@@ -25,6 +25,3 @@
 - Home Assistant：MQTT discovery 报文（`homeassistant/` 主题），自动发现设备
 - ESPHome 风格的局域网 mDNS 发现
 
-## 兄弟项目：Linux QT CAN 上位机
-
-规划中的下一个项目：PC 端 QT + SocketCAN，复用本项目练熟的线程模型、协议栈设计（CRC/切帧/超时）、日志与调试套路。
