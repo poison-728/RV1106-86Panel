@@ -57,8 +57,8 @@ flowchart LR
     MQTT_T -- "期望值登记" --> MB_T
     UI -- "点击卡片" --> MB_T
     MB_T == "RS485 / Modbus RTU" ==> RELAY
-    RELAY -- "回读真值" ==> MB_T
-    MB_T -- "回读→刷UI→触发上报" --> UI
+    RELAY -- "回读真值" --> MB_T
+    MB_T -- "回读后刷UI并触发上报" --> UI
     UI -- 保存/恢复 --> CFG
 ```
 
